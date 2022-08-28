@@ -96,6 +96,10 @@ def generate_default_blocks(url, api_key):
 def generate_issues_blocks(url, api_key):
     headers = {'X-Redmine-API-Key': api_key}
     jsonData = requests.get(url + '.json', headers=headers).content.decode('utf-8')
+
+    if jsonData == '': # おそらくアクセス権がないのでデフォルト表示にしておく
+        return generate_default_blocks(url, api_key)
+
     jroot = json.loads(jsonData)
 
     title = '{} #{}: {} - {} - {}'.format(
