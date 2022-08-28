@@ -28,8 +28,7 @@ if os.path.isfile(API_KEY_SAVE_PATH):
 
 # ボットトークンと署名シークレットを使ってアプリを初期化します
 app = App(
-    token=os.environ.get("SLACK_BOT_TOKEN"),
-    #signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
+    token=os.environ.get("SLACK_BOT_TOKEN")
 )
 
 def is_admin_user(user_id):
@@ -213,5 +212,4 @@ def redmine_list_registered_api_key(ack, respond, command, client):
 
 # アプリを起動します
 if __name__ == "__main__":
-    #app.start(port=int(os.environ.get("PORT", 3000)))
     SocketModeHandler(app, os.environ["SLACK_APP_TOKEN"]).start()
