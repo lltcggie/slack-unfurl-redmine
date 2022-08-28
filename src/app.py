@@ -56,15 +56,7 @@ def truncate(string, line_count, length, ellipsis='...'):
 
     return string_truncated[:length] + (ellipsis if truncated else '')
 
-def generate_blocks(url, REDMINE_API_KEY):
-    filepath = urllib.parse.urlparse(url).path
-    headers = {'X-Redmine-API-Key': REDMINE_API_KEY}
-    urlData = requests.get(url, headers=headers).content
-    tree = html.fromstring(urlData)
-
-    title = tree.xpath('//title/text()')[0]
-    icon_url = urllib.parse.urljoin(url, tree.xpath("//link[@rel='shortcut icon']/@href")[0])
-
+def generate_blocks(url, title, icon_url, description):
     blocks = {
         "blocks": [{
 			"type": "context",
@@ -82,18 +74,43 @@ def generate_blocks(url, REDMINE_API_KEY):
 		}]
     }
 
-    if filepath.startswith('/issues/'): # チケットだったら内容の一部も表示する
-        description_elm = tree.xpath("//div[@class='description']/div[@class='wiki']/p")
-        if len(description_elm) > 0:
-            description = truncate(tree.xpath("//div[@class='description']/div[@class='wiki']/p")[0].text_content(),
-                MAX_DESCRIPTION_LINE_NUM, MAX_DESCRIPTION_LENGTH)
-            blocks["blocks"][0]["elements"].append({
-                "type": "plain_text",
-                "text": description,
-                "emoji": True
-            })
+    if description and description != '': # チケットだったら内容の一部も表示する
+        blocks["blocks"][0]["elements"].append({
+            "type": "plain_text",
+            "text": description,
+            "emoji": True
+        })
 
     return blocks
+
+def generate_default_blocks(url, api_key):
+    headers = {'X-Redmine-API-Key': api_key}
+    urlData = requests.get(url, headers=headers).content
+    tree = html.fromstring(urlData)
+
+    title = tree.xpath('//title/text()')[0]
+    icon_url = urllib.parse.urljoin(url, tree.xpath("//link[@rel='shortcut icon']/@href")[0])
+    description = ''
+
+    return generate_blocks(url, title, icon_url, description)
+
+def generate_issues_blocks(url, api_key):
+    headers = {'X-Redmine-API-Key': api_key}
+    jsonData = requests.get(url + '.json', headers=headers).content.decode('utf-8')
+    jroot = json.loads(jsonData)
+
+    title = '{} #{}: {} - {} - {}'.format(
+        jroot['issue']['tracker']['name'],
+        jroot['issue']['id'],
+        jroot['issue']['subject'],
+        jroot['issue']['project']['name'],
+        urllib.parse.urlparse(url).netloc
+    )
+    icon_url = urllib.parse.urljoin(url, '/favicon.ico')
+    description = truncate(jroot['issue']['description'].replace('\r\n', '\n'),
+        MAX_DESCRIPTION_LINE_NUM, MAX_DESCRIPTION_LENGTH)
+
+    return generate_blocks(url, title, icon_url, description)
 
 def generate_channle_id_to_name_map(client):
     cl = client.conversations_list(exclude_archived=False, types='public_channel,private_channel')
@@ -124,7 +141,12 @@ def handle_link_shared_events(body, ack, client):
         unfurls = {}
         for urls in body["event"]["links"]:
             url = urls["url"]
-            unfurls[url] = generate_blocks(url, api_key)
+
+            filepath = urllib.parse.urlparse(url).path
+            if filepath.startswith('/issues/'): # チケットだったら内容の一部も表示する
+                unfurls[url] = generate_issues_blocks(url, api_key)
+            else:
+                unfurls[url] = generate_default_blocks(url, api_key)
 
         client.chat_unfurl(
             channel = channel_id,
