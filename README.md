@@ -22,8 +22,9 @@ Issuesの場合は説明の一部も表示する。
 4. 左メニュー Event Subscriptions を開き、 Enable Events を On に変更
     - App unfurl domains を展開し、 Add Domain で使用するドメイン 例 `www.redmine.org` を入力して Save Changes
 5. 左メニュー Slash Commands を開き、以下のコマンドを追加する
-    - /redmine_register_api_key
+    - /redmine_register_api_key [Redmine API Token]
     - /redmine_list_registered_api_key
+    - /redmine_unregister_api_key [Channel ID]
 5. 左メニュー Install App を開き、 Install App to Workspace -> Allow
 6. OAuth Access Token が表示されるのでクリップボードにコピー (`SLACK_BOT_TOKEN`)
 
@@ -33,10 +34,12 @@ Issuesの場合は説明の一部も表示する。
 使用するチャンネルに対して以下のセットアップが必要
 
 1. Botをチャンネルに招待する
+    - これをしなくても動きはするが `/redmine_list_registered_api_key` でチャンネル名が表示されなくなってしまうのでちゃんと招待すること
 2. `ADMIN_USER_ID_LIST` で指定したユーザーで `/redmine_register_api_key [RedmineのAPIキー]` と入力し、そのチャンネルで使用するAPIキーを登録する
 
 ## その他
-- `/redmine_list_registered_api_key` でAPIキーが登録されているチャンネルと紐づいているAPIキー一覧が表示できる
+- `/redmine_list_registered_api_key` でAPIキーが登録されているチャンネルとそれに紐づいているAPIキー一覧が表示できる
 - `ADMIN_USER_ID_LIST` で指定したユーザーで `/redmine_register_api_key` と入力するとそのチャンネルに紐づくAPIキーを削除することが出来る
+- `ADMIN_USER_ID_LIST` で指定したユーザーで `/redmine_unregister_api_key C03V7P6ASFP [Channel ID]` と入力すると指定チャンネルに紐づくAPIキーを削除することが出来る
 - チャンネルがアクセスできるプロジェクトの範囲の制御はそのチャンネルに登録するAPIキーにより制御する設計
     - チャンネルAでプロジェクト1のチケットを表示したいけどそれ以外のプロジェクトを表示したくないという場合は、プロジェクト1のみのアクセス権を持つユーザーのAPIキーをチャンネルAに登録すればよい、ということ

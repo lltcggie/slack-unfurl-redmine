@@ -189,6 +189,33 @@ def redmine_register_api_key(ack, respond, command):
 
     respond(respond_message)
 
+# APIキーを削除する
+@app.command("/redmine_unregister_api_key")
+def redmine_unregister_api_key(ack, respond, command):
+    ack()
+
+    user_id = command['user_id']
+    if not is_admin_user(user_id):
+        respond(f"あなたは管理ユーザーではありません")
+        return
+
+    channel_id = command['text']
+    respond_message = ''
+    with lock_channel_to_redmine_api_key_map:
+        changed = False
+        if channel_id in channel_to_redmine_api_key_map:
+            channel_to_redmine_api_key_map.pop(channel_id)
+            changed = True
+            respond_message = "APIキーを削除しました"
+        else:
+            respond_message = "APIキーが登録されていません"
+
+        if changed: # 永続化する
+            json_string = json.dumps(channel_to_redmine_api_key_map, indent=4)
+            atomic_save(API_KEY_SAVE_PATH, json_string)
+
+    respond(respond_message)
+
 # 登録したAPIキーのリストを表示する
 @app.command("/redmine_list_registered_api_key")
 def redmine_list_registered_api_key(ack, respond, command, client):
@@ -203,11 +230,10 @@ def redmine_list_registered_api_key(ack, respond, command, client):
     respond_text = ''
     with lock_channel_to_redmine_api_key_map:
         for channel_id, api_key in channel_to_redmine_api_key_map.items():
+            channel_name = 'Unkown'
             if channel_id in channle_id_to_name_map:
-                channel_name = channle_id_to_name_map[channel_id]
-                respond_text = respond_text + '{}: {}\n'.format(channel_name, api_key)
-            else: # チャンネルが削除されてたらマップからも消す
-                channel_to_redmine_api_key_map.pop(channel_id)
+                channel_name = '#' + channle_id_to_name_map[channel_id]
+            respond_text = respond_text + '{}({}): {}\n'.format(channel_id, channel_name, api_key)
     if len(respond_text) > 0:
         respond_text = respond_text[:-1] # 最後の改行を取り除く
         respond(respond_text)
