@@ -1,0 +1,14 @@
+version: '3'
+services:
+  slack-unfurl-redmine:
+    image: lltcggie/slack-unfurl-redmine:latest
+    container_name: slack-unfurl-redmine
+    restart: always
+    environment:
+      SLACK_APP_TOKEN: xapp-example
+      SLACK_BOT_TOKEN: xoxb-example
+      ADMIN_USER_ID_LIST: U02example;U03example
+      MAX_DESCRIPTION_LINE_NUM: 5
+      MAX_DESCRIPTION_LENGTH: 500
+    volumes:
+      - "./data:/src/data"

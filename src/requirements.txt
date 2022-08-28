@@ -1,0 +1,4 @@
+lxml
+requests
+slack-bolt
+urllib3
