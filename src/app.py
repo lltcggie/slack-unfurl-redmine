@@ -40,6 +40,9 @@ def atomic_save(path, data):
         f.write(data)
     os.replace(new_path, path)
 
+def remove_all_query_and_fragment(url):
+    return urllib.parse.urlunparse(urllib.parse.urlparse(url)._replace(query=None, fragment=None))
+
 def truncate(string, line_count, length, ellipsis='...'):
     '''文字列を切り詰める
 
@@ -94,6 +97,8 @@ def generate_default_blocks(url, api_key):
     return generate_blocks(url, title, icon_url, description)
 
 def generate_issues_blocks(url, api_key):
+    url = remove_all_query_and_fragment(url) # パラメータやフラグメントがあると駄目なので取り除く
+
     headers = {'X-Redmine-API-Key': api_key}
     jsonData = requests.get(url + '.json', headers=headers).content.decode('utf-8')
 
